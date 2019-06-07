@@ -840,7 +840,7 @@ impl<R: ReadBytesExt> Decoder<R> {
     }
 
     // Decode type information while skipping tags
-    fn typeinfo(&mut self) -> DecodeResult<TypeInfo> {
+    pub fn typeinfo(&mut self) -> DecodeResult<TypeInfo> {
         fn go<A: ReadBytesExt>(d: &mut Decoder<A>, level: usize) -> DecodeResult<TypeInfo> {
             if level == 0 {
                 return Err(DecodeError::TooNested)

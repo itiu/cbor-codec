@@ -87,7 +87,9 @@ pub enum EncodeError {
     InvalidSimpleValue(Simple),
     /// Certain values (e.g. `Value::Break`) are not legal to encode as
     /// independent units. Attempting to do so will trigger this error.
-    InvalidValue(Value)
+    InvalidValue(Value),
+    /// Some other error.
+    Other(Box<Error + Send + Sync>)
 }
 
 impl fmt::Display for EncodeError {
@@ -96,19 +98,27 @@ impl fmt::Display for EncodeError {
             EncodeError::IoError(ref e)            => write!(f, "EncodeError: I/O error: {}", *e),
             EncodeError::UnexpectedEOF             => write!(f, "EncodeError: unexpected end-of-file"),
             EncodeError::InvalidValue(ref v)       => write!(f, "EncodeError: invalid value {:?}", v),
-            EncodeError::InvalidSimpleValue(ref s) => write!(f, "EncodeError: invalid simple value {:?}", s)
+            EncodeError::InvalidSimpleValue(ref s) => write!(f, "EncodeError: invalid simple value {:?}", s),
+            EncodeError::Other(ref e)              => write!(f, "EncodeError: other error: {}", e)
         }
     }
 }
 
 impl Error for EncodeError {
     fn description(&self) -> &str {
-        "EncodeError"
+        match *self {
+            EncodeError::IoError(_)            => "i/o error",
+            EncodeError::UnexpectedEOF         => "unexpected eof",
+            EncodeError::InvalidValue(_)       => "invalid value",
+            EncodeError::InvalidSimpleValue(_) => "invalid simple value",
+            EncodeError::Other(_)              => "other error"
+        }
     }
 
     fn cause(&self) -> Option<&Error> {
         match *self {
             EncodeError::IoError(ref e) => Some(e),
+            EncodeError::Other(ref e)   => Some(&**e),
             _                           => None
         }
     }
@@ -286,9 +296,9 @@ impl<W: WriteBytesExt> Encoder<W> {
 
     /// Indefinite byte string encoding. (RFC 7049 section 2.2.2)
     pub fn bytes_iter<'r, I: Iterator<Item=&'r [u8]>>(&mut self, iter: I) -> EncodeResult {
-        try!(self.writer.write_u8(0b010_11111));
+        self.writer.write_u8(0b010_11111)?;
         for x in iter {
-            try!(self.bytes(x))
+            self.bytes(x)?
         }
         self.writer.write_u8(0b111_11111).map_err(From::from)
     }
@@ -300,9 +310,9 @@ impl<W: WriteBytesExt> Encoder<W> {
 
     /// Indefinite string encoding. (RFC 7049 section 2.2.2)
     pub fn text_iter<'r, I: Iterator<Item=&'r str>>(&mut self, iter: I) -> EncodeResult {
-        try!(self.writer.write_u8(0b011_11111));
+        self.writer.write_u8(0b011_11111)?;
         for x in iter {
-            try!(self.text(x))
+            self.text(x)?
         }
         self.writer.write_u8(0b111_11111).map_err(From::from)
     }
@@ -386,9 +396,9 @@ impl<W: WriteBytesExt> GenericEncoder<W> {
     pub fn value(&mut self, x: &Value) -> EncodeResult {
         match *x {
             Value::Array(ref vv) => {
-                try!(self.encoder.array(vv.len()));
+                self.encoder.array(vv.len())?;
                 for v in vv {
-                    try!(self.value(v))
+                    self.value(v)?
                 }
                 Ok(())
             }
@@ -397,14 +407,14 @@ impl<W: WriteBytesExt> GenericEncoder<W> {
             Value::Text(Text::Text(ref txt))    => self.encoder.text(txt),
             Value::Text(Text::Chunks(ref txt))  => self.encoder.text_iter(txt.iter().map(|v| &v[..])),
             Value::Map(ref m) => {
-                try!(self.encoder.object(m.len()));
+                self.encoder.object(m.len())?;
                 for (k, v) in m {
-                    try!(self.key(k).and(self.value(v)))
+                    self.key(k).and(self.value(v))?
                 }
                 Ok(())
             }
             Value::Tagged(t, ref val) => {
-                try!(self.encoder.tag(t));
+                self.encoder.tag(t)?;
                 self.value(&*val)
             }
             Value::Undefined => self.encoder.undefined(),
@@ -538,7 +548,7 @@ mod tests {
     #[test]
     fn tagged() {
         encoded("c11a514b67b0", |mut e| {
-            try!(e.tag(Tag::Timestamp));
+            e.tag(Tag::Timestamp)?;
             e.u32(1363896240)
         })
     }
@@ -546,9 +556,9 @@ mod tests {
     #[test]
     fn array() {
         encoded("83010203", |mut e| {
-            try!(e.array(3));
-            try!(e.u32(1));
-            try!(e.u32(2));
+            e.array(3)?;
+            e.u32(1)?;
+            e.u32(2)?;
             e.u32(3)
         });
         encoded("8301820203820405", |mut e| {
@@ -615,8 +625,8 @@ mod tests {
     #[test]
     fn object() {
         encoded("a26161016162820203", |mut e| {
-            try!(e.object(2));
-            try!(e.text("a").and(e.u8(1)));
+            e.object(2)?;
+            e.text("a").and(e.u8(1))?;
             e.text("b").and(e.array(2)).and(e.u8(2)).and(e.u8(3))
         })
     }

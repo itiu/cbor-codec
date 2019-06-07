@@ -1,12 +1,13 @@
 [package]
 name          = "cbor-codec"
-version       = "0.4.2"
+version       = "0.7.1"
 authors       = ["Toralf Wittner <tw@dtex.org>"]
 license       = "MPL-2.0"
 description   = "CBOR Codec implementation"
-repository    = "https://github.com/twittner/cbor-codec"
-documentation = "https://twittner.github.io/cbor-codec/doc/cbor/"
+repository    = "https://gitlab.com/twittner/cbor-codec"
+documentation = "https://twittner.gitlab.io/cbor-codec/cbor/"
 keywords      = ["cbor", "encoding", "binary"]
+categories    = ["encoding"]
 
 [lib]
 name = "cbor"
@@ -23,13 +24,11 @@ version  = ">= 0.2.21"
 optional = true
 
 [dev-dependencies]
+json-codec        = ">= 0.3"
 quickcheck        = ">= 0.2.21"
 quickcheck_macros = ">= 0.2.21"
-rand              = ">  0.3.0"
-rustc-serialize   = ">  0.3.0"
-serde             = ">= 0.5.0"
-serde_json        = ">= 0.5.0"
-serde_macros      = ">= 0.5.0"
+rand              = ">= 0.3"
+rustc-serialize   = ">= 0.3"
 
 [[test]]
 name = "tests"

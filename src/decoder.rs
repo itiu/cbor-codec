@@ -86,7 +86,7 @@
 //! assert_eq!(None, opt(d.u8()).unwrap())
 //! ```
 
-use byteorder::{BigEndian, ReadBytesExt};
+use byteorder::{LittleEndian, ReadBytesExt};
 use slice::{ReadSlice, ReadSliceError};
 use std::collections::{BTreeMap, LinkedList};
 use std::str::{from_utf8, Utf8Error};
@@ -328,7 +328,7 @@ macro_rules! read_signed_byte {
 // Read from reader, check value range and map to negative integer.
 macro_rules! read_signed {
     ($this: ident, $from: ident, $from_type: ty, $to: ident, $to_type: ty) => ({
-        $this.reader.$from::<BigEndian>()
+        $this.reader.$from::<LittleEndian>()
             .map_err(From::from)
             .and_then(|n| {
                 if n > $to::MAX as $from_type {
@@ -408,7 +408,7 @@ impl<R: ReadBytesExt> Kernel<R> {
         match *ti {
             (Type::UInt8, n @ 0...23) => Ok(n as u16),
             (Type::UInt8, 24)  => self.reader.read_u8().map(|n| n as u16).map_err(From::from),
-            (Type::UInt16, 25) => self.reader.read_u16::<BigEndian>().map_err(From::from),
+            (Type::UInt16, 25) => self.reader.read_u16::<LittleEndian>().map_err(From::from),
             _                  => unexpected_type(ti)
         }
     }
@@ -417,8 +417,8 @@ impl<R: ReadBytesExt> Kernel<R> {
         match *ti {
             (Type::UInt8, n @ 0...23) => Ok(n as u32),
             (Type::UInt8, 24)  => self.reader.read_u8().map(|n| n as u32).map_err(From::from),
-            (Type::UInt16, 25) => self.reader.read_u16::<BigEndian>().map(|n| n as u32).map_err(From::from),
-            (Type::UInt32, 26) => self.reader.read_u32::<BigEndian>().map_err(From::from),
+            (Type::UInt16, 25) => self.reader.read_u16::<LittleEndian>().map(|n| n as u32).map_err(From::from),
+            (Type::UInt32, 26) => self.reader.read_u32::<LittleEndian>().map_err(From::from),
             _                  => unexpected_type(ti)
         }
     }
@@ -427,9 +427,9 @@ impl<R: ReadBytesExt> Kernel<R> {
         match *ti {
             (Type::UInt8, n @ 0...23) => Ok(n as u64),
             (Type::UInt8, 24)  => self.reader.read_u8().map(|n| n as u64).map_err(From::from),
-            (Type::UInt16, 25) => self.reader.read_u16::<BigEndian>().map(|n| n as u64).map_err(From::from),
-            (Type::UInt32, 26) => self.reader.read_u32::<BigEndian>().map(|n| n as u64).map_err(From::from),
-            (Type::UInt64, 27) => self.reader.read_u64::<BigEndian>().map_err(From::from),
+            (Type::UInt16, 25) => self.reader.read_u16::<LittleEndian>().map(|n| n as u64).map_err(From::from),
+            (Type::UInt32, 26) => self.reader.read_u32::<LittleEndian>().map(|n| n as u64).map_err(From::from),
+            (Type::UInt64, 27) => self.reader.read_u64::<LittleEndian>().map_err(From::from),
             _                  => unexpected_type(ti)
         }
     }
@@ -504,7 +504,7 @@ impl<R: ReadBytesExt> Kernel<R> {
         match ti.0 {
             Type::Float16 => {
                 // Copied from RFC 7049 Appendix D:
-                let half  = self.reader.read_u16::<BigEndian>()?;
+                let half  = self.reader.read_u16::<LittleEndian>()?;
                 let exp   = half >> 10 & 0x1F;
                 let mant  = half & 0x3FF;
                 let value = match exp {
@@ -520,14 +520,14 @@ impl<R: ReadBytesExt> Kernel<R> {
 
     pub fn f32(&mut self, ti: &TypeInfo) -> DecodeResult<f32> {
         match ti.0 {
-            Type::Float32 => self.reader.read_f32::<BigEndian>().map_err(From::from),
+            Type::Float32 => self.reader.read_f32::<LittleEndian>().map_err(From::from),
             _             => unexpected_type(ti)
         }
     }
 
     pub fn f64(&mut self, ti: &TypeInfo) -> DecodeResult<f64> {
         match ti.0 {
-            Type::Float64 => self.reader.read_f64::<BigEndian>().map_err(From::from),
+            Type::Float64 => self.reader.read_f64::<LittleEndian>().map_err(From::from),
             _             => unexpected_type(ti)
         }
     }
@@ -538,9 +538,9 @@ impl<R: ReadBytesExt> Kernel<R> {
         match first {
             n @ 0...23 => Ok(n as u64),
             24 => self.reader.read_u8().map(|n| n as u64).map_err(From::from),
-            25 => self.reader.read_u16::<BigEndian>().map(|n| n as u64).map_err(From::from),
-            26 => self.reader.read_u32::<BigEndian>().map(|n| n as u64).map_err(From::from),
-            27 => self.reader.read_u64::<BigEndian>().map_err(From::from),
+            25 => self.reader.read_u16::<LittleEndian>().map(|n| n as u64).map_err(From::from),
+            26 => self.reader.read_u32::<LittleEndian>().map(|n| n as u64).map_err(From::from),
+            27 => self.reader.read_u64::<LittleEndian>().map_err(From::from),
             _  => unexpected_type(&(Type::UInt64, first))
         }
     }
@@ -659,13 +659,22 @@ impl<R: ReadBytesExt> Decoder<R> {
     pub fn u8(&mut self) -> DecodeResult<u8> {
         self.typeinfo().and_then(|ti| self.kernel.u8(&ti))
     }
+    pub fn _u8(&mut self, ti: &TypeInfo) -> DecodeResult<u8> {
+        self.kernel.u8(&ti)
+    }
 
     pub fn u16(&mut self) -> DecodeResult<u16> {
         self.typeinfo().and_then(|ti| self.kernel.u16(&ti))
     }
+    pub fn _u16(&mut self, ti: &TypeInfo) -> DecodeResult<u16> {
+        self.kernel.u16(&ti)
+    }
 
     pub fn u32(&mut self) -> DecodeResult<u32> {
         self.typeinfo().and_then(|ti| self.kernel.u32(&ti))
+    }
+    pub fn _u32(&mut self, ti: &TypeInfo) -> DecodeResult<u32> {
+        self.kernel.u32(&ti)
     }
 
     pub fn u64(&mut self) -> DecodeResult<u64> {
@@ -758,6 +767,14 @@ impl<R: ReadBytesExt> Decoder<R> {
         }
     }
 
+    pub fn _text(&mut self, ti: &TypeInfo) -> DecodeResult<String> {
+        let max  = self.config.max_len_text;
+        let data = self.kernel.raw_data(ti.1, max)?;
+                let res = String::from_utf8_lossy(&data);
+                return Ok(res.to_string());
+     }
+
+
     /// Decode an indefinite string.
     pub fn text_iter(&mut self) -> DecodeResult<TextIter<R>> {
         match self.typeinfo()? {
@@ -792,6 +809,13 @@ impl<R: ReadBytesExt> Decoder<R> {
             }
             ti => unexpected_type(&ti)
         }
+    }
+    pub fn _array(&mut self, ti: &TypeInfo) -> DecodeResult<usize> {
+                let len = self.kernel.unsigned(ti.1)?;
+                if len > self.config.max_len_array as u64 {
+                    return Err(DecodeError::TooLong { max: self.config.max_len_array, actual: len })
+                }
+                Ok(len as usize)
     }
 
     /// Decode the begin of an indefinite array.

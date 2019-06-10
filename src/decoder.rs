@@ -656,9 +656,14 @@ impl<R: ReadBytesExt> Decoder<R> {
         self.typeinfo().and_then(|ti| self.kernel.bool(&ti))
     }
 
+    pub fn _bool(&mut self) -> DecodeResult<bool> {
+        self.kernel.bool(&ti)
+    }
+
     pub fn u8(&mut self) -> DecodeResult<u8> {
         self.typeinfo().and_then(|ti| self.kernel.u8(&ti))
     }
+
     pub fn _u8(&mut self, ti: &TypeInfo) -> DecodeResult<u8> {
         self.kernel.u8(&ti)
     }
@@ -666,6 +671,7 @@ impl<R: ReadBytesExt> Decoder<R> {
     pub fn u16(&mut self) -> DecodeResult<u16> {
         self.typeinfo().and_then(|ti| self.kernel.u16(&ti))
     }
+
     pub fn _u16(&mut self, ti: &TypeInfo) -> DecodeResult<u16> {
         self.kernel.u16(&ti)
     }
@@ -681,20 +687,40 @@ impl<R: ReadBytesExt> Decoder<R> {
         self.typeinfo().and_then(|ti| self.kernel.u64(&ti))
     }
 
+    pub fn _u64(&mut self) -> DecodeResult<u64> {
+        self.kernel.u64(&ti)
+    }
+
     pub fn i8(&mut self) -> DecodeResult<i8> {
         self.typeinfo().and_then(|ti| self.kernel.i8(&ti))
+    }
+
+    pub fn _i8(&mut self) -> DecodeResult<i8> {
+        self.kernel.i8(&ti)
     }
 
     pub fn i16(&mut self) -> DecodeResult<i16> {
         self.typeinfo().and_then(|ti| self.kernel.i16(&ti))
     }
 
+    pub fn _i16(&mut self) -> DecodeResult<i16> {
+        self.kernel.i16(&ti)
+    }
+
     pub fn i32(&mut self) -> DecodeResult<i32> {
         self.typeinfo().and_then(|ti| self.kernel.i32(&ti))
     }
 
+    pub fn _i32(&mut self) -> DecodeResult<i32> {
+        self.kernel.i32(&ti)
+    }
+
     pub fn i64(&mut self) -> DecodeResult<i64> {
         self.typeinfo().and_then(|ti| self.kernel.i64(&ti))
+    }
+
+    pub fn _i64(&mut self) -> DecodeResult<i64> {
+        self.kernel.i64(&ti)
     }
 
     pub fn int(&mut self) -> DecodeResult<Int> {

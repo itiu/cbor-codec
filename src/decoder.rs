@@ -877,7 +877,31 @@ impl<R: ReadBytesExt> Decoder<R> {
         let start = self.config.max_nesting;
         go(self, start)
     }
+
+
+    pub fn typeinfo_and_tag(&mut self) -> DecodeResult<(TypeInfo, u64)> {
+        fn go<A: ReadBytesExt>(d: &mut Decoder<A>, level: usize, in_tag: u64) -> DecodeResult<(TypeInfo, u64)> {
+            if level == 0 {
+                return Err(DecodeError::TooNested)
+            }
+            match d.kernel.typeinfo()? {
+                (Type::Tagged, i) => {
+                    match d.kernel.unsigned(i) {
+                        Ok(tag) => {
+                                return go(d, level - 1, tag);
+                            },
+                        Err(e) => Err(e)
+                    }
+                },
+                ti=> Ok((ti, in_tag))
+            }
+        }
+        let start = self.config.max_nesting;
+        go(self, start, 0)
+    }
+
 }
+
 
 impl<R: ReadBytesExt + Skip> Decoder<R> {
     /// Skip over a single CBOR value.

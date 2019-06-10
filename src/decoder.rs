@@ -897,7 +897,7 @@ impl<R: ReadBytesExt> Decoder<R> {
             }
         }
         let start = self.config.max_nesting;
-        go(self, start, 0)
+        go(self, start, 255)
     }
 
 }

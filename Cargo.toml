@@ -3,6 +3,7 @@ name          = "v-cbr-codec"
 version       = "0.7.1"
 authors       = ["Toralf Wittner <tw@dtex.org>"]
 license       = "MPL-2.0"
+description   = "?"
 
 [lib]
 name = "cbor"
